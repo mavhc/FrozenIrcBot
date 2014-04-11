@@ -21,15 +21,15 @@ public class Client {
 	private final static String authName = "kDebugBot";
 	private final static String authPassword = "";
 	
+	private final static String owner = "Annelsa";
+	
 	/** Defines if the bot should authenticate itself on IRC */
-	private boolean useAuthentication = false;
+	private boolean useAuthentication = true;
 	
 	public static final boolean DEBUG = false;
 	
 	public final static String name = "|"+authName+"|";
 	public final static String channel = "#frozen";
-	
-	private final static String owner = "kuschku";
 	
 	static Client client;
 	
