@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import packets.Packet;
 import packets.TextPacket;
@@ -27,6 +29,8 @@ public abstract class Connection {
 	abstract public void connect(String ip, int port);
 
 	public void send(String text) {
+		if (Client.DEBUG) Logger.getLogger(Client.name).log(Level.FINE, text);
+		
 		TextPacket packet = new TextPacket();
 		packet.text = text + "\r\n";
 		packetQueue.add(packet);
