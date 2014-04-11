@@ -14,13 +14,13 @@ public class SongHandler implements MessageHandler {
 
 	@Override
 	public boolean handleMessage(MessagePacket msg) {
-		if (Client.isUserOp(msg.sender) && msg.message.contains("!"+((Client.DEBUG)?"debug":"")+"singalong start")) {
-			singAlongId = Integer.parseInt(msg.message.split("!"+((Client.DEBUG)?"debug":"")+"singalong start")[1].trim());
+		if (Client.isUserOp(msg.sender) && msg.message.contains("!singalong start")) {
+			singAlongId = Integer.parseInt(msg.message.split("!singalong start")[1].trim());
 			songLength = SongList.songs.get(singAlongId).size();
 			singAlongLine = 1;
 			Client.getClient().connection.send("PRIVMSG " + Client.channel + " :" + SongList.songs.get(singAlongId).get(0));
 			return true;
-		} else if (Client.isUserOp(msg.sender) && msg.message.contains("!debug singalong stop")) {
+		} else if (Client.isUserOp(msg.sender) && msg.message.contains("!singalong stop")) {
 			reset();
 			return true;
 		} else if (singAlongLine != -1) {

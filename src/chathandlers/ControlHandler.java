@@ -12,7 +12,7 @@ public class ControlHandler implements MessageHandler {
 		if (Client.isUserOp(msg.sender)) {
 			System.out.println(msg.message);
 			switch (msg.message) {
-			case "!"+((Client.DEBUG)?"debug":"")+"stop":
+			case "!stop":
 				Logger.getLogger(Client.name).info("Closing");
 				Client.getClient().connection.quit();
 				return true;

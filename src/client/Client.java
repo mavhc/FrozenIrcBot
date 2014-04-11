@@ -103,6 +103,9 @@ public class Client {
 	private void respond(TextPacket textPacket) throws IOException {
 		try {
 			String t = textPacket.text;
+			if (DEBUG) {
+				Logger.getLogger(name).log(Level.FINE, t);
+			}
 			if (t.contains("PING")) {
 				Logger.getLogger(name).log(Level.INFO, "Returning Ping");
 				connection.send("PONG " + t.split(" ")[1]);

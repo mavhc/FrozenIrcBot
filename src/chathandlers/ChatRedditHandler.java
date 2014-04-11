@@ -20,7 +20,7 @@ public class ChatRedditHandler implements MessageHandler {
 
 	@Override
 	public boolean handleMessage(MessagePacket msg) {
-		if (msg.message.equals("!"+((Client.DEBUG)?"debug":"")+"redditinfo")) {
+		if (msg.message.equals("!redditinfo")) {
 			int[] info;
 			try {
 				info = getSubscribers();
