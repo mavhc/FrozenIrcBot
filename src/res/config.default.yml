@@ -1,0 +1,6 @@
+channel:        #frozen
+owner:          kuschku
+useAuth:        false
+authName:       kBotDebug
+authPassword:   
+debug:          false
