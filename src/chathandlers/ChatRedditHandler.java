@@ -24,8 +24,8 @@ public class ChatRedditHandler implements MessageHandler {
 			int[] info;
 			try {
 				info = getSubscribers();
-				Client.getClient().connection.send("PRIVMSG " + Client.configuration.get("channel") + " :" + info[0] + " subscribed to /r/Frozen");
-				Client.getClient().connection.send("PRIVMSG " + Client.configuration.get("channel") + " :" + info[1] + " online on /r/Frozen");
+				Client.getClient().connection.send("PRIVMSG " + Client.configuration.get("channel") + " :" + info[0] + " subscribed to /r/"+Client.configuration.get("channel").replace("#", ""));
+				Client.getClient().connection.send("PRIVMSG " + Client.configuration.get("channel") + " :" + info[1] + " online on /r/"+Client.configuration.get("channel").replace("#", ""));
 			} catch (IOException e) {
 			}
 			return true;
@@ -35,7 +35,7 @@ public class ChatRedditHandler implements MessageHandler {
 	
 	private static int[] getSubscribers() throws IOException {
 		lastSubscriberUpdate = System.currentTimeMillis();
-		URL url = new URL("http://www.reddit.com/r/Frozen/");
+		URL url = new URL("http://www.reddit.com/r/"+Client.configuration.get("channel").replace("#", "")+"/");
         BufferedReader in = new BufferedReader(
         new InputStreamReader(url.openStream()));
         String inputLine;
