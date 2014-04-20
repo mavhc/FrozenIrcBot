@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
+import java.util.List;
 
 public class Configuration extends HashMap<String, String> {
 	private static final long serialVersionUID = -6820273033623985817L;
@@ -72,5 +73,9 @@ public class Configuration extends HashMap<String, String> {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public String[] getHandlers() {
+		return get("handler").split(",");
 	}
 }

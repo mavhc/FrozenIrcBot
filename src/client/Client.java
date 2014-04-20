@@ -2,6 +2,7 @@ package client;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +27,21 @@ public class Client {
 	public List<MessageHandler> handlers = new ArrayList<MessageHandler>();
 
 	public Connection connection;
+	
+	public static <T> T newInstance(final String className,final Object... args) 
+	        throws ClassNotFoundException, 
+	        NoSuchMethodException, 
+	        InstantiationException, 
+	        IllegalAccessException, 
+	        IllegalArgumentException, 
+	        InvocationTargetException {
+	  // Derive the parameter types from the parameters themselves.
+	  Class[] types = new Class[args.length];
+	  for ( int i = 0; i < types.length; i++ ) {
+	    types[i] = args[i].getClass();
+	  }
+	  return (T) Class.forName(className).getConstructor(types).newInstance(args);
+	}
 
 	public static void main(String[] args) {
 		String configPath = "config.yml";
@@ -89,10 +105,15 @@ public class Client {
 	}
 
 	private void registerHandlers() {
-		handlers.add(new ChatRedditHandler());
-		handlers.add(new SongHandler());
-		handlers.add(new ControlHandler());
-		handlers.add(new ShipHandler());
+		for (String handler: configuration.getHandlers()) {
+			try {
+				handlers.add(newInstance(handler));
+			} catch (ClassNotFoundException | NoSuchMethodException
+					| InstantiationException | IllegalAccessException
+					| IllegalArgumentException | InvocationTargetException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public void reportException(Exception e) {

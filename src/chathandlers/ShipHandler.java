@@ -138,13 +138,28 @@ public class ShipHandler implements MessageHandler {
 	@Override
 	public boolean handleMessage(MessagePacket msg) {
 		String[] argc = msg.message.split(" ");
-		if (argc[0].equalsIgnoreCase("!ship")) {
-			String[] syllablesA = getSyllablesFromWord(argc[1]).toArray(new String[0]);
-			String[] syllablesB = getSyllablesFromWord(argc[2]).toArray(new String[0]);
-		
-			Client.getClient().connection.send(Client.configuration.get("channel"),(syllablesA[0].length()<2?syllablesA[0]+syllablesA[1]:syllablesA[0])+(syllablesB[0].length()<2?syllablesB[0]+syllablesB[1]:syllablesB[0]));
+		if (argc[0].equalsIgnoreCase("!ship")) {	
+			Client.getClient().connection.send(Client.configuration.get("channel"),ship(argc[1],argc[2]));
 			return true;
 		}
 		return false;
+	}
+	
+	public final static String ship(String a, String b) {
+		String[] syllablesA = getSyllablesFromWord(a).toArray(new String[0]);
+		String[] syllablesB = getSyllablesFromWord(b).toArray(new String[0]);
+		
+		String begin = "";
+		String end = "";
+		
+		for (int i = 0; i <= (syllablesA.length-1)/2 || begin.length()<2; i++) {
+			begin += syllablesA[i];
+		}
+		
+		for (int i = 0; i <= (syllablesB.length-1)/2-0.5 || end.length()<2; i++) {
+			end = syllablesB[syllablesB.length-i-1] + end;
+		}
+		
+		return begin + end;
 	}
 }
