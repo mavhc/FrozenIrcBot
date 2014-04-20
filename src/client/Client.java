@@ -45,6 +45,10 @@ public class Client {
 
 	public static void main(String[] args) {
 		String configPath = "config.yml";
+		for (String arg: args) {
+			if (arg.contains("--config="))
+				configPath = arg.substring(arg.indexOf("--config=")+"--config=".length());
+		}
 		Client.configuration = Configuration.fromFile(new File(configPath));
 		
 		client = new Client();
