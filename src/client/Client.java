@@ -15,6 +15,7 @@ import packets.MessagePacket;
 import packets.TextPacket;
 import chathandlers.ChatRedditHandler;
 import chathandlers.ControlHandler;
+import chathandlers.ShipHandler;
 import chathandlers.SongHandler;
 
 public class Client {
@@ -91,6 +92,7 @@ public class Client {
 		handlers.add(new ChatRedditHandler());
 		handlers.add(new SongHandler());
 		handlers.add(new ControlHandler());
+		handlers.add(new ShipHandler());
 	}
 
 	public void reportException(Exception e) {

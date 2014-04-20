@@ -58,6 +58,10 @@ public abstract class Connection {
 			output.add(packet);
 		}
 	}
+	
+	public void send(String channel, String text) {
+		send("PRIVMSG " + channel + " :" + text);
+	}
 
 	public void sendPrivate(String user, String text) {
 		send(String.format("PRIVMSG %s :%s", user, text));
