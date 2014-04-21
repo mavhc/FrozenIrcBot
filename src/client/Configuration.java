@@ -64,7 +64,7 @@ public class Configuration extends HashMap<String, String> {
 	public void toFile(File output) {
 		try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
 				new FileOutputStream(output)))) {		
-			for (Entry<String, String> entry : entrySet()) {
+			for (java.util.Map.Entry<String, String> entry : entrySet()) {
 				writer.write(String.format("%s:%s", entry.getKey(),
 						entry.getValue())+"\n");
 			}
