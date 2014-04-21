@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,10 +13,6 @@ import net.NetConnection;
 import net.TestConnection;
 import packets.MessagePacket;
 import packets.TextPacket;
-import chathandlers.ChatRedditHandler;
-import chathandlers.ControlHandler;
-import chathandlers.ShipHandler;
-import chathandlers.SongHandler;
 
 public class Client {
 	static Client client;
@@ -28,6 +23,7 @@ public class Client {
 
 	public Connection connection;
 	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static <T> T newInstance(final String className,final Object... args) 
 	        throws ClassNotFoundException, 
 	        NoSuchMethodException, 
@@ -111,7 +107,7 @@ public class Client {
 	private void registerHandlers() {
 		for (String handler: configuration.getHandlers()) {
 			try {
-				handlers.add(newInstance(handler));
+				handlers.add((MessageHandler) newInstance(handler));
 			} catch (ClassNotFoundException | NoSuchMethodException
 					| InstantiationException | IllegalAccessException
 					| IllegalArgumentException | InvocationTargetException e) {
@@ -124,8 +120,9 @@ public class Client {
 		connection.sendPrivate(configuration.get("owner"), "An error occured");
 		connection.sendPrivate(configuration.get("owner"), e.getLocalizedMessage());
 
-		Arrays.asList(e.getStackTrace()).forEach(
-				x -> connection.sendPrivate(configuration.get("owner"), x.toString()));
+		for (StackTraceElement x : e.getStackTrace()) {
+			connection.sendPrivate(configuration.get("owner"), x.toString());
+		}
 	}
 
 	public static boolean isUserOp(String user) {

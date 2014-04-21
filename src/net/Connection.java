@@ -10,9 +10,9 @@ import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import client.Client;
 import packets.Packet;
 import packets.TextPacket;
+import client.Client;
 
 public abstract class Connection {
 	protected OutputStream out;
