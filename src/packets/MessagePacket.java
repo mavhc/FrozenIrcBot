@@ -9,7 +9,8 @@ public class MessagePacket extends Packet {
 	
 	public static MessagePacket fromString(String str) {
 		MessagePacket msg = new MessagePacket();
-		str = str.replace(":", "");
+		
+		str = str.substring(1);
 		msg.sender = str.split("!")[0];
 		msg.senderExtended = str.split(" ")[0];
 		msg.command = str.split(" ")[1];
@@ -19,7 +20,8 @@ public class MessagePacket extends Packet {
 			msg.channel = msg.sender;
 		}
 		try {
-			msg.message = str.substring(str.indexOf(msg.channel)+msg.channel.length()+1);
+			msg.message = str.substring(str.indexOf("PRIVMSG")+"PRIVMSG".length()+1);
+			msg.message = str.substring(str.indexOf(" :")+" :".length());
 		} catch (Exception e) {
 			msg.message = "";
 		}

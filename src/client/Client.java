@@ -84,8 +84,9 @@ public class Client {
 				}
 				connection.send("MODE " + "|" + configuration.get("authName") + "|" + " +x");
 				connection.send("JOIN " + configuration.get("channel"));
-			} else if (packet.startsWith(":")) {
+			} else if (packet.startsWith(":")&&packet.contains("PRIVMSG")) {
 				MessagePacket msg = MessagePacket.fromString(packet);
+				//connection.sendPrivate("kuschku",String.format("SENDER: %s CHANNEL: %s MSG: %s",msg.sender,msg.channel,msg.message));
 
 				for (MessageHandler handler : handlers) {
 					if (handler.handleMessage(msg)) {

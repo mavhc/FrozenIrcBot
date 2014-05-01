@@ -117,7 +117,7 @@ public class ShipHandler implements MessageHandler {
                 currentCluster.append(c);
 
             } else {
-                throw new RuntimeException("I missed a case in the clustering code");
+                Client.getClient().reportException(new RuntimeException("I missed a case in the clustering code"));
             }
 
 
@@ -136,10 +136,12 @@ public class ShipHandler implements MessageHandler {
 
 	@Override
 	public boolean handleMessage(MessagePacket msg) {
-		String[] argc = msg.message.split(" ");
-		if (argc[0].equalsIgnoreCase("!ship")) {	
-			Client.getClient().connection.send(Client.configuration.get("channel"),ship(argc[1],argc[2]));
-			return true;
+		if (msg.message.contains("!ship ")) {
+			String[] argc = msg.message.split(" ");
+			if (argc[0].equalsIgnoreCase("!ship")) {	
+				Client.getClient().connection.send(msg.channel,ship(argc[1],argc[2]));
+				return true;
+			}
 		}
 		return false;
 	}

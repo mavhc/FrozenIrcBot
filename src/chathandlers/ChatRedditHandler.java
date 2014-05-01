@@ -24,8 +24,8 @@ public class ChatRedditHandler implements MessageHandler {
 			int[] info;
 			try {
 				info = getSubscribers();
-				Client.getClient().connection.send("PRIVMSG " + Client.configuration.get("channel") + " :" + info[0] + " subscribed to /r/"+Client.configuration.get("channel").replace("#", ""));
-				Client.getClient().connection.send("PRIVMSG " + Client.configuration.get("channel") + " :" + info[1] + " online on /r/"+Client.configuration.get("channel").replace("#", ""));
+				Client.getClient().connection.send("PRIVMSG " + msg.channel + " :" + info[0] + " subscribed to /r/"+Client.configuration.get("channel").replace("#", ""));
+				Client.getClient().connection.send("PRIVMSG " + msg.channel + " :" + info[1] + " online on /r/"+Client.configuration.get("channel").replace("#", ""));
 			} catch (IOException e) {
 			}
 			return true;

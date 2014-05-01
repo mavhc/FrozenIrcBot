@@ -4,4 +4,4 @@ useAuth:        false
 authName:       kBotDebug
 authPassword:   
 debug:          false
-handler:		chathandlers.ChatRedditHandler,chathandlers.ControlHandler,chathandlers.SongHandler
+handler:        chathandlers.ChatRedditHandler,chathandlers.ControlHandler,chathandlers.SongHandler

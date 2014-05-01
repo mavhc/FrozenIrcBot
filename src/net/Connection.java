@@ -22,13 +22,16 @@ public abstract class Connection {
 
 	ConnectionReader readThread;
 	ConnectionWriter writeThread;
+	PingThread pingThread;
 
 	public void run() {
 		readThread = new ConnectionReader();
 		writeThread = new ConnectionWriter();
+		pingThread = new PingThread();
 
 		readThread.start();
 		writeThread.start();
+		pingThread.start();
 
 		try {
 			writeThread.join();
@@ -70,6 +73,7 @@ public abstract class Connection {
 	public void quit() {
 		send("QUIT Connection closed");
 		writeThread.quit();
+		pingThread.quit();
 	}
 
 	class ConnectionReader extends Thread {
@@ -114,6 +118,27 @@ public abstract class Connection {
 						}
 					}
 				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		public void quit() {
+			this.run = false;
+		}
+	}
+	
+	class PingThread extends Thread {
+
+		public boolean run = true;
+
+		@Override
+		public void run() {
+			while (this.run) {
+				send("PING "+System.nanoTime());
+				try {
+					sleep(20000);
+				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
