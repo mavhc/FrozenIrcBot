@@ -19,10 +19,12 @@ public abstract class Connection {
 	protected InputStream in;
 
 	Queue<TextPacket> output = new LinkedList<TextPacket>();
+	
+	public boolean isAuthed = false;
 
 	ConnectionReader readThread;
 	ConnectionWriter writeThread;
-	PingThread pingThread;
+	public PingThread pingThread;
 
 	public void run() {
 		readThread = new ConnectionReader();
@@ -31,7 +33,8 @@ public abstract class Connection {
 
 		readThread.start();
 		writeThread.start();
-		pingThread.start();
+		
+		Client.getClient().identify();
 
 		try {
 			writeThread.join();
@@ -96,6 +99,11 @@ public abstract class Connection {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				try {
+					sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 
@@ -120,6 +128,11 @@ public abstract class Connection {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				try {
+					sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 
@@ -128,7 +141,7 @@ public abstract class Connection {
 		}
 	}
 	
-	class PingThread extends Thread {
+	public class PingThread extends Thread {
 
 		public boolean run = true;
 
