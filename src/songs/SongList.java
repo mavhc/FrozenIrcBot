@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import client.Client;
+import client.Logger;
 
 public class SongList {
 	public enum Song {
@@ -35,7 +35,7 @@ public class SongList {
 		        }            
 		    }        
 		} catch (IOException e) {
-			Client.getClient().reportException(e);
+			Logger.reportException(e);
 		}
 		return content;
 	}

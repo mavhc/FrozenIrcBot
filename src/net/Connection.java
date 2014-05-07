@@ -1,18 +1,20 @@
 package net;
 
-import java.io.ByteArrayInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.UUID;
 
 import packets.Packet;
 import packets.TextPacket;
 import client.Client;
+import client.Logger;
 
 public abstract class Connection {
 	protected OutputStream out;
@@ -34,7 +36,8 @@ public abstract class Connection {
 		readThread.start();
 		writeThread.start();
 		
-		Client.getClient().identify();
+		send("PASS " + UUID.randomUUID());
+		send("NICK " + "|" + Client.configuration.get("authName") + "|");
 
 		try {
 			writeThread.join();
@@ -45,6 +48,8 @@ public abstract class Connection {
 	}
 
 	public void writePacket(Packet packet) throws IOException {
+		Logger.log(">>", packet.toString());
+		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dataout = new DataOutputStream(baos);
 		packet.writeToOutput(dataout);
@@ -56,13 +61,9 @@ public abstract class Connection {
 	abstract public void connect(String ip, int port);
 
 	public void send(String text) {
-		Client.log(">>", text);
-
 		TextPacket packet = new TextPacket();
 		packet.text = text + "\r\n";
-		synchronized (output) {
-			output.add(packet);
-		}
+		output.add(packet);
 	}
 	
 	public void send(String channel, String text) {
@@ -74,7 +75,6 @@ public abstract class Connection {
 	}
 
 	public void quit() {
-		send("QUIT Connection closed");
 		writeThread.quit();
 		pingThread.quit();
 	}
@@ -86,23 +86,19 @@ public abstract class Connection {
 		@Override
 		public void run() {
 			while (this.run) {
+				BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+				String line;
 				try {
-					int bytesAvailable = in.available();
-					if (bytesAvailable > 0) {
-						byte[] packetBytes = new byte[bytesAvailable];
-						in.read(packetBytes, 0, packetBytes.length);
-						TextPacket textPacket = new TextPacket();
-						textPacket.parseFromInput(new DataInputStream(
-								new ByteArrayInputStream(packetBytes)));
-						Client.getClient().respond(textPacket);
+					while((line = reader.readLine()) != null) {
+						try {
+							Client.getClient().respond(new TextPacket(line));
+						} catch (IOException e) {
+							Logger.reportException(e);
+						}
 					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				try {
 					sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+				} catch (IOException | InterruptedException e) {
+					Logger.reportException(e);
 				}
 			}
 		}
@@ -120,16 +116,14 @@ public abstract class Connection {
 		public void run() {
 			while (this.run) {
 				try {
-					synchronized (output) {
-						while (output.size() > 0) {
-							writePacket(output.remove());
-						}
+					while (output.size() > 0) {
+						writePacket(output.remove());
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
 				try {
-					sleep(100);
+					sleep(10);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -137,6 +131,13 @@ public abstract class Connection {
 		}
 
 		public void quit() {
+			TextPacket packet = new TextPacket();
+			packet.text = "QUIT :Connection Closed by User" + "\r\n";
+			
+			try {
+				writePacket(packet);
+			} catch (IOException e) {
+			}
 			this.run = false;
 		}
 	}

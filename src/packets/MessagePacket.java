@@ -29,6 +29,7 @@ public class MessagePacket extends Packet {
 		return msg;
 	}
 	
+	@Override
 	public String toString() {
 		return String.format("MSGPCKG SENDER:'%s',COMMAND:'%s',CHANNEL:'%s',MSG:'%s'",sender,command,channel,message);
 	}

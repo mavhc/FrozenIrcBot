@@ -6,7 +6,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import net.Connection;
 import net.NetConnection;
@@ -55,18 +54,24 @@ public class Client {
 		}
 	}
 
-	public static void restart(long timeout) {
-		getClient().connection.quit();
-		
+	public void restart(final long timeout) {
+		connection.quit();
+
+		Thread th = new Thread(new Thread() {
+			@Override
+			public void run() {
+				try {
+					sleep(timeout);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		th.start();
 		try {
-			getClient().wait(timeout);
-		} catch (InterruptedException e1) {
-		}
-		
-		client = new Client();
-		try {
-			client.start("irc.quakenet.org", 6667);
-		} catch (IOException e) {
+			th.join();
+			start("irc.quakenet.org", 6667);
+		} catch (InterruptedException | IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -87,14 +92,16 @@ public class Client {
 	public void respond(TextPacket textPacket) throws IOException {
 		try {
 			String packet = textPacket.text;
-			Client.log("<<", packet);
+			Logger.log("<<", packet);
 
 			if (packet.contains("PING")) {
 				connection.send("PONG " + packet.split(" ")[1]);
 				if (!connection.isAuthed) {
-					connection.send("IDENT " + "|" + configuration.get("authName") + "|");
-					connection.send("USER " + "|" + configuration.get("authName") + "|"
-							+ " 0 * :" + "|" + configuration.get("authName") + "|");
+					connection.send("IDENT " + "|"
+							+ configuration.get("authName") + "|");
+					connection.send("USER " + "|"
+							+ configuration.get("authName") + "|" + " 0 * :"
+							+ "|" + configuration.get("authName") + "|");
 					connection.isAuthed = true;
 				}
 			} else if (packet.contains("|" + configuration.get("authName")
@@ -110,7 +117,7 @@ public class Client {
 				connection.send("JOIN " + configuration.get("channel"));
 				connection.pingThread.start();
 			} else if (packet.startsWith("ERROR")) {
-				restart(2000);
+				connection.quit();
 			} else if (packet.startsWith(":") && packet.contains("PRIVMSG")) {
 				MessagePacket msg = MessagePacket.fromString(packet);
 
@@ -121,13 +128,8 @@ public class Client {
 				}
 			}
 		} catch (Exception e) {
-			reportException(e);
+			Logger.reportException(e);
 		}
-	}
-
-	public void identify() {
-		connection.send("PASS " + UUID.randomUUID());
-		connection.send("NICK " + "|" + configuration.get("authName") + "|");
 	}
 
 	private void registerHandlers() {
@@ -137,18 +139,9 @@ public class Client {
 			} catch (ClassNotFoundException | NoSuchMethodException
 					| InstantiationException | IllegalAccessException
 					| IllegalArgumentException | InvocationTargetException e) {
+				System.err.println("Handler could not be activated: "+handler);
 				e.printStackTrace();
 			}
-		}
-	}
-
-	public void reportException(Exception e) {
-		connection.sendPrivate(configuration.get("owner"), "An error occured");
-		connection.sendPrivate(configuration.get("owner"),
-				e.getLocalizedMessage());
-
-		for (StackTraceElement x : e.getStackTrace()) {
-			connection.sendPrivate(configuration.get("owner"), x.toString());
 		}
 	}
 
@@ -158,9 +151,5 @@ public class Client {
 
 	public static Client getClient() {
 		return client;
-	}
-
-	public static void log(String side, String msg) {
-		System.out.printf("[%s] %s\n", side, msg);
 	}
 }

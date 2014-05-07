@@ -23,4 +23,9 @@ public class TextPacket extends Packet {
 	public void parseFromInput(DataInput in) throws IOException {
 		text = in.readLine();
 	}
+
+	@Override
+	public String toString() {
+		return text;
+	}
 }

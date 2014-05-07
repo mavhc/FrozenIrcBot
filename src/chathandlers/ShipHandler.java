@@ -5,6 +5,7 @@ import java.util.List;
 
 import packets.MessagePacket;
 import client.Client;
+import client.Logger;
 import client.MessageHandler;
 
 public class ShipHandler implements MessageHandler {
@@ -117,7 +118,7 @@ public class ShipHandler implements MessageHandler {
                 currentCluster.append(c);
 
             } else {
-                Client.getClient().reportException(new RuntimeException("I missed a case in the clustering code"));
+            	Logger.reportException(new RuntimeException(String.format("The word %s could not be decomposed for shipping",word)));
             }
 
 
