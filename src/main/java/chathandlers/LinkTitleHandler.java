@@ -5,49 +5,48 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
-import com.json.parsers.JSONParser;
-import com.json.parsers.JsonParserFactory;
-
 import packets.MessagePacket;
 import client.Client;
 import client.MessageHandler;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 public class LinkTitleHandler implements MessageHandler {
+	static final String regexOG = "<meta (.*)=(\"(og:title|title)\"|'(og:title|title)') content=(\"(.*)\"|'(.*)')(\\/>|>)";
+	static final String regexGeneric = "<title>(.*)<\\/title>";
+	static final String regexVideo = "<meta (.*)=(\"twitter:app:url:iphone\"|'twitter:app:url:iphone') content=(\"(.*)\"|'(.*)')(>|\\/>)";
+
+	static Pattern patternOG = Pattern.compile(regexOG);
+	static Pattern patternGeneric = Pattern.compile(regexGeneric);
+	static Pattern patternVideo = Pattern.compile(regexVideo);
+	
 	@Override
 	public boolean handleMessage(MessagePacket msg) {
 		String[] results = stringToURLList(msg.message);
 		for (String result : results) {
 			Entry<String, String> value = extractTitleFromWebpage(result);
 			if (value.getValue() != null) {
-				Map data = getData(value.getValue());
+				JsonObject data = getData(value.getValue());
+				
 				String message = String.format("%s [%s|%s views]",
-						StringEscapeUtils.unescapeHtml4(value.getKey()),
-						nicetime((String) ((Map) data.get("data"))
-								.get("duration")), ((Map) data.get("data"))
-								.get("viewCount"));
+						((char)2)+StringEscapeUtils.unescapeHtml4(value.getKey())+((char)2),
+						nicetime(data.get("data").getAsJsonObject().get("duration").getAsString()), data.get("data").getAsJsonObject().get("viewCount").getAsString());
 				Client.getClient().connection.send(
 						Client.configuration.get("channel"), message);
 			}
 		}
 		return results.length > 0;
-	}
-
-	public static void main(String[] args) {
-		Entry t = extractTitleFromWebpage("https://www.youtube.com/watch?v=BS0T8Cd4UhA");
-		System.out.println(t.getKey() + ":" + t.getValue());
 	}
 
 	public static String nicetime(String time) {
@@ -85,13 +84,9 @@ public class LinkTitleHandler implements MessageHandler {
 		return "";
 	}
 
-	private static Map getData(String value) {
-		JsonParserFactory factory = JsonParserFactory.getInstance();
-		JSONParser parser = factory.newJsonParser();
-
-		return parser
-				.parseJson(getPage("http://gdata.youtube.com/feeds/api/videos/"
-						+ value + "?v=2&alt=jsonc"));
+	private static JsonObject getData(String value) {
+		return new JsonParser().parse(getPage("http://gdata.youtube.com/feeds/api/videos/"
+				+ value + "?v=2&alt=jsonc")).getAsJsonObject();
 	}
 
 	public static String[] stringToURLList(String input) {
@@ -108,38 +103,28 @@ public class LinkTitleHandler implements MessageHandler {
 	}
 
 	public static Entry<String, String> extractTitleFromWebpage(String address) {
-
-		final String regex_og = "<meta (.*)=(\\\"(og:title|title)\\\"|\\'(og:title|title)\\') content=(\\\"(.*)\\\"|\\'(.*)\\')(\\/>|>)";
-		final String regex_generic = "<title>(.*)<\\/title>";
-		final String regex_video = "<meta (.*)=(\\\"twitter:app:url:iphone\\\"|\\\'twitter:app:url:iphone\\\') (content=\\\"(.*)\\\"|content=\\\'(.*)\\\')(\\/?)>";
-
-		Pattern pattern_og = Pattern.compile(regex_og);
-		Pattern pattern_generic = Pattern.compile(regex_generic);
-		Pattern pattern_video = Pattern.compile(regex_video);
-
 		Matcher matcher;
-		
-		System.out.println(pattern_video.toString());
 
 		String page = getPage(address);
-		String title = "null";
+		String title = "";
 		String video_id = null;
 		
-		matcher = pattern_og.matcher(page);
+		matcher = patternOG.matcher(page);
 		if (matcher.find()) {
 			title = matcher.group(6);
 		}
 		
-		matcher = pattern_generic.matcher(page);
-		if (matcher.find()) {
-			page = matcher.group(1);
+		if (title=="") {
+			matcher = patternGeneric.matcher(page);
+			if (matcher.find()) {
+				title = matcher.group(1);
+			}
 		}
 		
-		matcher = pattern_video.matcher(page);
-		if (matcher.find()) {
-			System.out.println("found something");
-			video_id = matcher.group();
-			//video_id = video_id.substring(video_id.lastIndexOf("/") + 1);
+		matcher = patternVideo.matcher(page);
+		while (matcher.find()) {
+			video_id = matcher.group(4);
+			video_id = video_id.substring(video_id.lastIndexOf("/") + 1);
 		}
 		
 		return new AbstractMap.SimpleEntry<String, String>(title, video_id);
