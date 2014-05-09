@@ -127,9 +127,7 @@ public class Client {
 				
 				if (msg.command.equalsIgnoreCase("PRIVMSG")) {
 				for (MessageHandler handler : handlers) {
-					if (handler.handleMessage(msg)) {
-						break;
-					}
+					handler.handleMessage(msg);
 				}
 				} else if (msg.command.equalsIgnoreCase("353")) {
 					String[] users = msg.message.split(" ");
