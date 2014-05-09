@@ -5,10 +5,14 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import net.Connection;
 import net.NetConnection;
+import net.PermLevel;
 import net.TestConnection;
 import packets.MessagePacket;
 import packets.TextPacket;
@@ -118,13 +122,30 @@ public class Client {
 				connection.pingThread.start();
 			} else if (packet.startsWith("ERROR")) {
 				connection.quit();
-			} else if (packet.startsWith(":") && packet.contains("PRIVMSG")) {
+			} else if (packet.startsWith(":")) {
 				MessagePacket msg = MessagePacket.fromString(packet);
-
+				
+				if (msg.command.equalsIgnoreCase("PRIVMSG")) {
 				for (MessageHandler handler : handlers) {
 					if (handler.handleMessage(msg)) {
 						break;
 					}
+				}
+				} else if (msg.command.equalsIgnoreCase("353")) {
+					String[] users = msg.message.split(" ");
+					Map<String,PermLevel> userlist = new HashMap<String,PermLevel>();
+					
+					for (String user : users) {
+						if (user.startsWith("+")) {
+							userlist.put(user.substring(1), PermLevel.VOICE);
+						} else if (user.startsWith("@")) {
+							userlist.put(user.substring(1), PermLevel.OPERATOR);
+						} else {
+							userlist.put(user, PermLevel.USER);
+						}
+					}
+					
+					connection.users = userlist;
 				}
 			}
 		} catch (Exception e) {
@@ -146,7 +167,7 @@ public class Client {
 	}
 
 	public static boolean isUserOp(String user) {
-		return user.trim().equalsIgnoreCase(configuration.get("owner"));
+		return getClient().connection.users.get(user)==PermLevel.OPERATOR;
 	}
 
 	public static Client getClient() {

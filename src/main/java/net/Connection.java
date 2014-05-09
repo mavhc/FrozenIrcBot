@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
 
@@ -23,6 +25,8 @@ public abstract class Connection {
 	Queue<TextPacket> output = new LinkedList<TextPacket>();
 	
 	public boolean isAuthed = false;
+	
+	public Map<String,PermLevel> users = new HashMap<String,PermLevel>();
 
 	ConnectionReader readThread;
 	ConnectionWriter writeThread;
@@ -150,6 +154,7 @@ public abstract class Connection {
 		public void run() {
 			while (this.run) {
 				send("PING "+System.nanoTime());
+				send("NAMES "+Client.configuration.get("channel"));
 				try {
 					sleep(20000);
 				} catch (InterruptedException e) {

@@ -5,9 +5,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -38,10 +42,12 @@ public class LinkTitleHandler implements MessageHandler {
 			Entry<String, String> value = extractTitleFromWebpage(result);
 			if (value.getValue() != null) {
 				JsonObject data = getData(value.getValue());
+				DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(Locale.US);
 				
 				String message = String.format("%s [%s|%s views]",
 						((char)2)+StringEscapeUtils.unescapeHtml4(value.getKey())+((char)2),
-						nicetime(data.get("data").getAsJsonObject().get("duration").getAsString()), data.get("data").getAsJsonObject().get("viewCount").getAsString());
+						nicetime(data.get("data").getAsJsonObject().get("duration").getAsString()),
+						formatter.format(data.get("data").getAsJsonObject().get("viewCount").getAsLong()));
 				Client.getClient().connection.send(
 						Client.configuration.get("channel"), message);
 			}
