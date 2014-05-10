@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.kuschku.ircbot.net.Connection;
+import de.kuschku.ircbot.net.Connection.PingThread;
 import de.kuschku.ircbot.net.NetConnection;
 import de.kuschku.ircbot.net.PermLevel;
 import de.kuschku.ircbot.net.TestConnection;
@@ -81,8 +82,7 @@ public class Client {
 
 	public void start(String ip, int port) throws UnknownHostException,
 			IOException {
-		connection = (Boolean.parseBoolean(configuration.get("debug"))) ? new TestConnection()
-				: new NetConnection();
+		connection = new NetConnection();
 
 		connection.connect(ip, port);
 
@@ -100,38 +100,36 @@ public class Client {
 			if (packet.contains("PING")) {
 				connection.send("PONG " + packet.split(" ")[1]);
 				if (!connection.isAuthed) {
-					connection.send("IDENT " + "|"
-							+ configuration.get("authName") + "|");
-					connection.send("USER " + "|"
-							+ configuration.get("authName") + "|" + " 0 * :"
-							+ "|" + configuration.get("authName") + "|");
+					connection.send("IDENT " + configuration.get("name"));
+					connection.send("USER " + configuration.get("name")
+							+ " 0 * :" + configuration.get("name"));
 					connection.isAuthed = true;
 				}
-			} else if (packet.contains("|" + configuration.get("authName")
-					+ "|" + " :Welcome to the QuakeNet IRC Network, " + "|"
-					+ configuration.get("authName") + "|")) {
+			} else if (packet.contains(":"+configuration.get("name"))&&packet.contains("MODE")) {
 				if (Boolean.parseBoolean(configuration.get("useAuth"))) {
 					connection.send("PRIVMSG Q@CServe.quakenet.org :AUTH "
 							+ configuration.get("authName") + " "
 							+ configuration.get("authPassword"));
 				}
-				connection.send("MODE " + "|" + configuration.get("authName")
-						+ "|" + " +x");
+				connection.send("MODE " + configuration.get("name") + " +x");
 				connection.send("JOIN " + configuration.get("channel"));
+				connection.pingThread = connection.new PingThread();
 				connection.pingThread.start();
+				Logger.log("INFO", packet);
 			} else if (packet.startsWith("ERROR")) {
+				Logger.log("INFO", packet);
 				connection.quit();
 			} else if (packet.startsWith(":")) {
 				MessagePacket msg = MessagePacket.fromString(packet);
-				
+
 				if (msg.command.equalsIgnoreCase("PRIVMSG")) {
-				for (MessageHandler handler : handlers) {
-					handler.handleMessage(msg);
-				}
+					for (MessageHandler handler : handlers) {
+						handler.handleMessage(msg);
+					}
 				} else if (msg.command.equalsIgnoreCase("353")) {
 					String[] users = msg.message.split(" ");
-					Map<String,PermLevel> userlist = new HashMap<String,PermLevel>();
-					
+					Map<String, PermLevel> userlist = new HashMap<String, PermLevel>();
+
 					for (String user : users) {
 						if (user.startsWith("+")) {
 							userlist.put(user.substring(1), PermLevel.VOICE);
@@ -141,9 +139,11 @@ public class Client {
 							userlist.put(user, PermLevel.USER);
 						}
 					}
-					
+
 					connection.users = userlist;
 				}
+			} else {
+				Logger.log("INFO", packet);
 			}
 		} catch (Exception e) {
 			Logger.reportException(e);
@@ -157,14 +157,15 @@ public class Client {
 			} catch (ClassNotFoundException | NoSuchMethodException
 					| InstantiationException | IllegalAccessException
 					| IllegalArgumentException | InvocationTargetException e) {
-				System.err.println("Handler could not be activated: "+handler);
+				System.err
+						.println("Handler could not be activated: " + handler);
 				e.printStackTrace();
 			}
 		}
 	}
 
 	public static boolean isUserOp(String user) {
-		return getClient().connection.users.get(user)==PermLevel.OPERATOR;
+		return getClient().connection.users.get(user) == PermLevel.OPERATOR;
 	}
 
 	public static Client getClient() {

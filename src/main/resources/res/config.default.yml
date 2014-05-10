@@ -1,7 +1,9 @@
-channel:        #frozen
-owner:          kuschku
-useAuth:        false
-authName:       kBotDebug
+channel:        #test
+subreddit:		all
+owner:          me
+useAuth:        true
+name:			|debug|
+authName:       botDebug
 authPassword:   
 debug:          false
-handler:        chathandlers.ChatRedditHandler,chathandlers.ControlHandler,chathandlers.SongHandler
+handler:        de.kuschku.ircbot.chathandlers.ChatRedditHandler,de.kuschku.ircbot.chathandlers.ControlHandler,de.kuschku.ircbot.chathandlers.ShipHandler,de.kuschku.ircbot.chathandlers.LinkTitleHandler

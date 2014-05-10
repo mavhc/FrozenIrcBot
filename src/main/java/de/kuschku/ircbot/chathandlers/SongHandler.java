@@ -18,7 +18,7 @@ public class SongHandler implements MessageHandler {
 			singAlongId = Integer.parseInt(msg.message.split("!singalong start")[1].trim());
 			songLength = SongList.songs.get(singAlongId).size();
 			singAlongLine = 1;
-			Client.getClient().connection.send("PRIVMSG " + Client.configuration.get("channel") + " :" + SongList.songs.get(singAlongId).get(0));
+			Client.getClient().connection.send("PRIVMSG " + msg.channel + " :" + SongList.songs.get(singAlongId).get(0));
 			return true;
 		} else if (Client.isUserOp(msg.sender) && msg.message.contains("!singalong stop")) {
 			reset();
@@ -26,12 +26,12 @@ public class SongHandler implements MessageHandler {
 		} else if (singAlongLine != -1) {
 			if (equalsApproximate(singAlongLine,msg.message)) {
 				singAlongLine++;
-				Client.getClient().connection.send("PRIVMSG " + Client.configuration.get("channel") + " :" + SongList.songs.get(singAlongId).get(singAlongLine));
+				Client.getClient().connection.send("PRIVMSG " + msg.channel + " :" + SongList.songs.get(singAlongId).get(singAlongLine));
 				singAlongLine++;
 				
 				if (singAlongLine == songLength-1) {
 					// In case of odd length songs we send the last two lines at once.
-					Client.getClient().connection.send("PRIVMSG " + Client.configuration.get("channel") + " :" + SongList.songs.get(singAlongId).get(singAlongLine));
+					Client.getClient().connection.send("PRIVMSG " + msg.channel + " :" + SongList.songs.get(singAlongId).get(singAlongLine));
 					reset();
 				} else if (singAlongLine == songLength) {
 					reset();

@@ -41,7 +41,7 @@ public abstract class Connection {
 		writeThread.start();
 		
 		send("PASS " + UUID.randomUUID());
-		send("NICK " + "|" + Client.configuration.get("authName") + "|");
+		send("NICK " + Client.configuration.get("name"));
 
 		try {
 			writeThread.join();
@@ -153,7 +153,7 @@ public abstract class Connection {
 		@Override
 		public void run() {
 			while (this.run) {
-				send("PING "+System.nanoTime());
+				send("PING "+System.currentTimeMillis());
 				send("NAMES "+Client.configuration.get("channel"));
 				try {
 					sleep(20000);

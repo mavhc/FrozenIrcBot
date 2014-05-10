@@ -48,7 +48,7 @@ public class LinkTitleHandler implements MessageHandler {
 						nicetime(data.get("data").getAsJsonObject().get("duration").getAsString()),
 						formatter.format(data.get("data").getAsJsonObject().get("viewCount").getAsLong()));
 				Client.getClient().connection.send(
-						Client.configuration.get("channel"), message);
+						msg.channel, message);
 			}
 		}
 		return results.length > 0;

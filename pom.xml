@@ -12,7 +12,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>client.Client</mainClass>
+							<mainClass>de.kuschku.ircbot.client.Client</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
