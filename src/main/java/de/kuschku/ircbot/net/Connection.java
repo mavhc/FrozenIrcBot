@@ -8,10 +8,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import de.kuschku.ircbot.client.Client;
 import de.kuschku.ircbot.client.Logger;
@@ -22,11 +22,11 @@ public abstract class Connection {
 	protected OutputStream out;
 	protected InputStream in;
 
-	Queue<TextPacket> output = new LinkedList<TextPacket>();
-	
+	Queue<TextPacket> output = new LinkedBlockingQueue<TextPacket>();
+
 	public boolean isAuthed = false;
-	
-	public Map<String,PermLevel> users = new HashMap<String,PermLevel>();
+
+	public Map<String, PermLevel> users = new HashMap<String, PermLevel>();
 
 	ConnectionReader readThread;
 	ConnectionWriter writeThread;
@@ -39,7 +39,7 @@ public abstract class Connection {
 
 		readThread.start();
 		writeThread.start();
-		
+
 		send("PASS " + UUID.randomUUID());
 		send("NICK " + Client.configuration.get("name"));
 
@@ -52,14 +52,16 @@ public abstract class Connection {
 	}
 
 	public void writePacket(Packet packet) throws IOException {
-		Logger.log(">>", packet.toString());
-		
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		DataOutputStream dataout = new DataOutputStream(baos);
-		packet.writeToOutput(dataout);
-		byte[] packetBytes = baos.toByteArray();
-		out.write(packetBytes);
-		out.flush();
+		if (packet != null) {
+			Logger.log(">>", packet.toString());
+
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream dataout = new DataOutputStream(baos);
+			packet.writeToOutput(dataout);
+			byte[] packetBytes = baos.toByteArray();
+			out.write(packetBytes);
+			out.flush();
+		}
 	}
 
 	abstract public void connect(String ip, int port);
@@ -69,7 +71,7 @@ public abstract class Connection {
 		packet.text = text + "\r\n";
 		output.add(packet);
 	}
-	
+
 	public void send(String channel, String text) {
 		send("PRIVMSG " + channel + " :" + text);
 	}
@@ -90,10 +92,11 @@ public abstract class Connection {
 		@Override
 		public void run() {
 			while (this.run) {
-				BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+				BufferedReader reader = new BufferedReader(
+						new InputStreamReader(in));
 				String line;
 				try {
-					while((line = reader.readLine()) != null) {
+					while ((line = reader.readLine()) != null) {
 						try {
 							Client.getClient().respond(new TextPacket(line));
 						} catch (IOException e) {
@@ -121,7 +124,7 @@ public abstract class Connection {
 			while (this.run) {
 				try {
 					while (output.size() > 0) {
-						writePacket(output.remove());
+						writePacket(output.poll());
 					}
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -137,7 +140,7 @@ public abstract class Connection {
 		public void quit() {
 			TextPacket packet = new TextPacket();
 			packet.text = "QUIT :Connection Closed by User" + "\r\n";
-			
+
 			try {
 				writePacket(packet);
 			} catch (IOException e) {
@@ -145,7 +148,7 @@ public abstract class Connection {
 			this.run = false;
 		}
 	}
-	
+
 	public class PingThread extends Thread {
 
 		public boolean run = true;
@@ -153,8 +156,8 @@ public abstract class Connection {
 		@Override
 		public void run() {
 			while (this.run) {
-				send("PING "+System.currentTimeMillis());
-				send("NAMES "+Client.configuration.get("channel"));
+				send("PING " + System.currentTimeMillis());
+				send("NAMES " + Client.configuration.get("channel"));
 				try {
 					sleep(20000);
 				} catch (InterruptedException e) {

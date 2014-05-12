@@ -10,10 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import de.kuschku.ircbot.net.Connection;
-import de.kuschku.ircbot.net.Connection.PingThread;
 import de.kuschku.ircbot.net.NetConnection;
 import de.kuschku.ircbot.net.PermLevel;
-import de.kuschku.ircbot.net.TestConnection;
 import de.kuschku.ircbot.packets.MessagePacket;
 import de.kuschku.ircbot.packets.TextPacket;
 
