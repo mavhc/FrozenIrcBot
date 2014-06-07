@@ -141,6 +141,7 @@ public class ShipHandler implements MessageHandler {
 			String[] argc = msg.message.split(" ");
 			if (argc[0].equalsIgnoreCase("!ship")) {	
 				Client.getClient().connection.send(msg.channel,ship(argc[1],argc[2]));
+				Client.getClient().connection.send(msg.channel,ship(argc[2],argc[1]));
 				return true;
 			}
 		}

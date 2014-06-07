@@ -1,8 +1,6 @@
 package de.kuschku.ircbot.net;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -55,10 +53,7 @@ public abstract class Connection {
 		if (packet != null) {
 			Logger.log(">>", packet.toString());
 
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			DataOutputStream dataout = new DataOutputStream(baos);
-			packet.writeToOutput(dataout);
-			byte[] packetBytes = baos.toByteArray();
+			byte[] packetBytes = packet.toString().getBytes("UTF-8");
 			out.write(packetBytes);
 			out.flush();
 		}
