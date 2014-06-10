@@ -30,13 +30,15 @@ public class LinkTitleHandler implements MessageHandler {
 	static final String regexOG = "<meta (.*)=(\"(og:title|title)\"|'(og:title|title)') content=(\"(.*)\"|'(.*)')(\\/>|>)";
 	static final String regexGeneric = "<title>(.*)<\\/title>";
 	static final String regexVideo = "<meta (.*)=(\"twitter:app:url:iphone\"|'twitter:app:url:iphone') content=(\"(.*)\"|'(.*)')(>|\\/>)";
+	static final String regexRedirect = "<META http-equiv=\"refresh\" content=\"0;URL=(\"(.*)\"|'(.*)')>";
 
-	static Pattern patternOG = Pattern.compile(regexOG);
-	static Pattern patternGeneric = Pattern.compile(regexGeneric);
-	static Pattern patternVideo = Pattern.compile(regexVideo);
+	static final Pattern patternOG = Pattern.compile(regexOG);
+	static final Pattern patternGeneric = Pattern.compile(regexGeneric);
+	static final Pattern patternVideo = Pattern.compile(regexVideo);
+	static final Pattern patternRedirect = Pattern.compile(regexRedirect);
 
 	public static enum Site {
-		youtube, vimeo
+		YOUTUBE, VIMEO, NONE
 	}
 
 	@Override
@@ -44,7 +46,7 @@ public class LinkTitleHandler implements MessageHandler {
 		String[] results = stringToURLList(msg.message);
 		for (String result : results) {
 			Triple<String, String, Site> value = extractTitleFromWebpage(result);
-			if (value.getMiddle() != null) {
+			if (value.getMiddle() != null && value.getRight() != Site.NONE) {
 				try {
 					Triple<String, Integer, Integer> data = getData(
 							value.getMiddle(), value.getRight());
@@ -84,12 +86,14 @@ public class LinkTitleHandler implements MessageHandler {
 		int tries = 0;
 		boolean redirect = true;
 		try {
+			String result = "";
+			BufferedReader in = null;
+
 			HttpURLConnection conn = null;
 			while (redirect && tries < 20) {
 				URL resourceUrl = new URL(address);
 				HttpURLConnection.setFollowRedirects(true);
-				conn = (HttpURLConnection) resourceUrl
-						.openConnection();
+				conn = (HttpURLConnection) resourceUrl.openConnection();
 				conn.setInstanceFollowRedirects(true);
 				conn.setConnectTimeout(15000);
 				conn.setReadTimeout(15000);
@@ -97,7 +101,7 @@ public class LinkTitleHandler implements MessageHandler {
 						"User-Agent",
 						"Mozilla/5.0 (Windows; U; Windows NT 6.0; ru; rv:1.9.0.11) Gecko/2009060215 Firefox/3.0.11 (.NET CLR 3.5.30729)");
 				conn.connect();
-				
+
 				redirect = false;
 
 				// normally, 3xx is redirect
@@ -109,20 +113,36 @@ public class LinkTitleHandler implements MessageHandler {
 						redirect = true;
 						address = conn.getHeaderField("Location");
 					}
+				} else {
+					try {
+						in = new BufferedReader(new InputStreamReader(
+								is = conn.getInputStream()));
+						String input = "";
+
+						for (int i = 0; i < 5; i++) {
+							if ((input = in.readLine())!=null)
+								result += input + "\n";
+						}
+
+						if (result.contains("refresh")) {						
+							int begin = result.indexOf("URL='");
+							result = result.substring(begin + 5);
+							result = result.substring(0, result.indexOf("'"));
+							redirect = true;
+							address = result;
+						}
+					} catch (IOException e) {
+						System.out.println("error happened: " + e.toString());
+					}
 				}
 			}
-			try (BufferedReader in = new BufferedReader(new InputStreamReader(
-					is = conn.getInputStream()))) {
-				String result = "";
-				String input;
+			String input;
 
-				while ((input = in.readLine()) != null) {
-					result += input + "\n";
-				}
-
-				return result;
-			} catch (IOException e) {
+			while ((input = in.readLine()) != null) {
+				result += input + "\n";
 			}
+
+			return result;
 		} catch (Exception e) {
 			System.out.println("error happened: " + e.toString());
 		} finally {
@@ -139,7 +159,7 @@ public class LinkTitleHandler implements MessageHandler {
 	private static Triple<String, Integer, Integer> getData(String value,
 			Site site) throws FileNotFoundException {
 		switch (site) {
-		case youtube:
+		case YOUTUBE:
 			JsonObject data = new JsonParser().parse(
 					getPage("http://gdata.youtube.com/feeds/api/videos/"
 							+ value + "?v=2&alt=jsonc")).getAsJsonObject();
@@ -149,7 +169,7 @@ public class LinkTitleHandler implements MessageHandler {
 					data.get("data").getAsJsonObject().get("duration")
 							.getAsInt(), data.get("data").getAsJsonObject()
 							.get("viewCount").getAsInt());
-		case vimeo:
+		case VIMEO:
 			data = new JsonParser()
 					.parse(getPage("http://vimeo.com/api/v2/video/" + value
 							+ ".json")).getAsJsonArray().get(0)
@@ -198,7 +218,7 @@ public class LinkTitleHandler implements MessageHandler {
 
 		matcher = patternVideo.matcher(page);
 
-		String presite = "no_site";
+		String presite = "NONE";
 		while (matcher.find()) {
 			video_id = matcher.group(4);
 
@@ -207,7 +227,7 @@ public class LinkTitleHandler implements MessageHandler {
 			video_id = video_id.substring(video_id.lastIndexOf("/") + 1);
 		}
 
-		Site site = Site.valueOf(presite);
+		Site site = Site.valueOf(presite.toUpperCase());
 
 		return Triple.of(title, video_id, site);
 	}
