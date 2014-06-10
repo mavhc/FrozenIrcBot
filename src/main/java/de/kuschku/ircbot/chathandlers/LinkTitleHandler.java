@@ -1,22 +1,23 @@
 package de.kuschku.ircbot.chathandlers;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.tuple.Triple;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -33,22 +34,31 @@ public class LinkTitleHandler implements MessageHandler {
 	static Pattern patternOG = Pattern.compile(regexOG);
 	static Pattern patternGeneric = Pattern.compile(regexGeneric);
 	static Pattern patternVideo = Pattern.compile(regexVideo);
-	
+
+	public static enum Site {
+		youtube, vimeo
+	}
+
 	@Override
 	public boolean handleMessage(MessagePacket msg) {
 		String[] results = stringToURLList(msg.message);
 		for (String result : results) {
-			Entry<String, String> value = extractTitleFromWebpage(result);
-			if (value.getValue() != null) {
-				JsonObject data = getData(value.getValue());
-				DecimalFormat formatter = (DecimalFormat) NumberFormat.getInstance(Locale.US);
-				
-				String message = String.format("%s [%s|%s views]",
-						((char)2)+StringEscapeUtils.unescapeHtml4(value.getKey())+((char)2),
-						nicetime(data.get("data").getAsJsonObject().get("duration").getAsString()),
-						formatter.format(data.get("data").getAsJsonObject().get("viewCount").getAsLong()));
-				Client.getClient().connection.send(
-						msg.channel, message);
+			Triple<String, String, Site> value = extractTitleFromWebpage(result);
+			if (value.getMiddle() != null) {
+				try {
+					Triple<String, Integer, Integer> data = getData(
+							value.getMiddle(), value.getRight());
+					DecimalFormat formatter = (DecimalFormat) NumberFormat
+							.getInstance(Locale.US);
+
+					String message = String.format("%s [%s|%s views]",
+							((char) 2) + data.getLeft() + ((char) 2),
+							nicetime(data.getMiddle().toString()),
+							formatter.format(data.getRight()));
+					Client.getClient().connection.send(msg.channel, message);
+				} catch (FileNotFoundException e) {
+
+				}
 			}
 		}
 		return results.length > 0;
@@ -70,10 +80,39 @@ public class LinkTitleHandler implements MessageHandler {
 	}
 
 	public static String getPage(String address) {
+		InputStream is = null;
+		int tries = 0;
+		boolean redirect = true;
 		try {
-			URL url = new URL(address);
+			HttpURLConnection conn = null;
+			while (redirect && tries < 20) {
+				URL resourceUrl = new URL(address);
+				HttpURLConnection.setFollowRedirects(true);
+				conn = (HttpURLConnection) resourceUrl
+						.openConnection();
+				conn.setInstanceFollowRedirects(true);
+				conn.setConnectTimeout(15000);
+				conn.setReadTimeout(15000);
+				conn.setRequestProperty(
+						"User-Agent",
+						"Mozilla/5.0 (Windows; U; Windows NT 6.0; ru; rv:1.9.0.11) Gecko/2009060215 Firefox/3.0.11 (.NET CLR 3.5.30729)");
+				conn.connect();
+				
+				redirect = false;
+
+				// normally, 3xx is redirect
+				int status = conn.getResponseCode();
+				if (status != HttpURLConnection.HTTP_OK) {
+					if (status == HttpURLConnection.HTTP_MOVED_TEMP
+							|| status == HttpURLConnection.HTTP_MOVED_PERM
+							|| status == HttpURLConnection.HTTP_SEE_OTHER) {
+						redirect = true;
+						address = conn.getHeaderField("Location");
+					}
+				}
+			}
 			try (BufferedReader in = new BufferedReader(new InputStreamReader(
-					url.openStream()))) {
+					is = conn.getInputStream()))) {
 				String result = "";
 				String input;
 
@@ -84,14 +123,44 @@ public class LinkTitleHandler implements MessageHandler {
 				return result;
 			} catch (IOException e) {
 			}
-		} catch (MalformedURLException e) {
+		} catch (Exception e) {
+			System.out.println("error happened: " + e.toString());
+		} finally {
+			if (is != null)
+				try {
+					is.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 		}
 		return "";
 	}
 
-	private static JsonObject getData(String value) {
-		return new JsonParser().parse(getPage("http://gdata.youtube.com/feeds/api/videos/"
-				+ value + "?v=2&alt=jsonc")).getAsJsonObject();
+	private static Triple<String, Integer, Integer> getData(String value,
+			Site site) throws FileNotFoundException {
+		switch (site) {
+		case youtube:
+			JsonObject data = new JsonParser().parse(
+					getPage("http://gdata.youtube.com/feeds/api/videos/"
+							+ value + "?v=2&alt=jsonc")).getAsJsonObject();
+			return Triple.of(
+					StringEscapeUtils.unescapeHtml4(data.get("data")
+							.getAsJsonObject().get("title").getAsString()),
+					data.get("data").getAsJsonObject().get("duration")
+							.getAsInt(), data.get("data").getAsJsonObject()
+							.get("viewCount").getAsInt());
+		case vimeo:
+			data = new JsonParser()
+					.parse(getPage("http://vimeo.com/api/v2/video/" + value
+							+ ".json")).getAsJsonArray().get(0)
+					.getAsJsonObject();
+			return Triple.of(StringEscapeUtils.unescapeHtml4(data.get("title")
+					.getAsString()), data.get("duration").getAsInt(),
+					data.get("stats_number_of_plays").getAsInt());
+		default:
+			throw new FileNotFoundException();
+		}
+
 	}
 
 	public static String[] stringToURLList(String input) {
@@ -107,31 +176,39 @@ public class LinkTitleHandler implements MessageHandler {
 		return results.toArray(new String[0]);
 	}
 
-	public static Entry<String, String> extractTitleFromWebpage(String address) {
+	public static Triple<String, String, Site> extractTitleFromWebpage(
+			String address) {
 		Matcher matcher;
 
 		String page = getPage(address);
 		String title = "";
 		String video_id = null;
-		
+
 		matcher = patternOG.matcher(page);
 		if (matcher.find()) {
 			title = matcher.group(6);
 		}
-		
-		if (title=="") {
+
+		if (title == "") {
 			matcher = patternGeneric.matcher(page);
 			if (matcher.find()) {
 				title = matcher.group(1);
 			}
 		}
-		
+
 		matcher = patternVideo.matcher(page);
+
+		String presite = "no_site";
 		while (matcher.find()) {
 			video_id = matcher.group(4);
+
+			presite = video_id.substring(0, video_id.indexOf(":/")).replace(
+					"vnd.", "");
 			video_id = video_id.substring(video_id.lastIndexOf("/") + 1);
 		}
-		
-		return new AbstractMap.SimpleEntry<String, String>(title, video_id);
+
+		Site site = Site.valueOf(presite);
+
+		return Triple.of(title, video_id, site);
 	}
 }
