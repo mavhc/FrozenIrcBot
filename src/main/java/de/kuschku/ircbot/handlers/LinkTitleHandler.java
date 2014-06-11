@@ -1,4 +1,4 @@
-package de.kuschku.ircbot.chathandlers;
+package de.kuschku.ircbot.handlers;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -18,15 +18,16 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.tuple.Triple;
+import org.pircbotx.PircBotX;
+import org.pircbotx.hooks.ListenerAdapter;
+import org.pircbotx.hooks.events.MessageEvent;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import de.kuschku.ircbot.client.Client;
-import de.kuschku.ircbot.client.MessageHandler;
-import de.kuschku.ircbot.packets.MessagePacket;
+import de.kuschku.ircbot.format.BoldText;
 
-public class LinkTitleHandler implements MessageHandler {
+public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 	static final String regexOG = "<meta (.*)=(\"(og:title|title)\"|'(og:title|title)') content=(\"(.*)\"|'(.*)')(\\/>|>)";
 	static final String regexGeneric = "<title>(.*)<\\/title>";
 	static final String regexVideo = "<meta (.*)=(\"twitter:app:url:iphone\"|'twitter:app:url:iphone') content=(\"(.*)\"|'(.*)')(>|\\/>)";
@@ -42,8 +43,8 @@ public class LinkTitleHandler implements MessageHandler {
 	}
 
 	@Override
-	public boolean handleMessage(MessagePacket msg) {
-		String[] results = stringToURLList(msg.message);
+	public void onMessage(MessageEvent<PircBotX> event) throws Exception {
+		String[] results = stringToURLList(event.getMessage());
 		for (String result : results) {
 			Triple<String, String, Site> value = extractTitleFromWebpage(result);
 			if (value.getMiddle() != null && value.getRight() != Site.NONE) {
@@ -54,16 +55,15 @@ public class LinkTitleHandler implements MessageHandler {
 							.getInstance(Locale.US);
 
 					String message = String.format("%s [%s|%s views]",
-							((char) 2) + data.getLeft() + ((char) 2),
+							new BoldText(data.getLeft()),
 							nicetime(data.getMiddle().toString()),
 							formatter.format(data.getRight()));
-					Client.getClient().connection.send(msg.channel, message);
+					event.getChannel().send().message(message);
 				} catch (FileNotFoundException e) {
 
 				}
 			}
 		}
-		return results.length > 0;
 	}
 
 	public static String nicetime(String time) {

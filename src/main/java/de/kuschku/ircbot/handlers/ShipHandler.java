@@ -1,14 +1,17 @@
-package de.kuschku.ircbot.chathandlers;
+package de.kuschku.ircbot.handlers;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import de.kuschku.ircbot.client.Client;
-import de.kuschku.ircbot.client.Logger;
-import de.kuschku.ircbot.client.MessageHandler;
-import de.kuschku.ircbot.packets.MessagePacket;
+import org.pircbotx.PircBotX;
+import org.pircbotx.hooks.ListenerAdapter;
+import org.pircbotx.hooks.events.MessageEvent;
 
-public class ShipHandler implements MessageHandler {
+import com.google.common.collect.ImmutableList;
+
+import de.kuschku.ircbot.ArgsParser;
+
+public class ShipHandler extends ListenerAdapter<PircBotX> {
 	
 	public static List<String> getSyllablesFromWord(String word) {
         word = word.toLowerCase();
@@ -116,12 +119,7 @@ public class ShipHandler implements MessageHandler {
             } else if(!buildingConsonantCluster && isVowel(c)) {
                 // still building vowel cluster
                 currentCluster.append(c);
-
-            } else {
-            	Logger.reportException(new RuntimeException(String.format("The word %s could not be decomposed for shipping",word)));
             }
-
-
         }
         clusters.add(currentCluster.toString());
         return clusters;
@@ -135,18 +133,18 @@ public class ShipHandler implements MessageHandler {
                 || c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U' || c == 'Y';
     }
 
-	@Override
-	public boolean handleMessage(MessagePacket msg) {
-		if (msg.message.contains("!ship ")) {
-			String[] argc = msg.message.split(" ");
-			if (argc[0].equalsIgnoreCase("!ship")) {	
-				Client.getClient().connection.send(msg.channel,ship(argc[1],argc[2]));
-				Client.getClient().connection.send(msg.channel,ship(argc[2],argc[1]));
-				return true;
-			}
-		}
-		return false;
-	}
+    @Override
+    public void onMessage(MessageEvent<PircBotX> event) throws Exception {
+        ImmutableList<String> args = ArgsParser.parseArgs(event.getMessage(),"!");
+        if (args!=null && args.get(0).equalsIgnoreCase("ship")) {
+            if (args.size()==3) {
+            	event.getChannel().send().message(ship(args.get(1), args.get(2)));
+            	event.getChannel().send().message(ship(args.get(2), args.get(1)));
+            } else {
+            	event.getChannel().send().message("Error: Please use exactly 2 names");
+            }
+        }
+    }
 	
 	public final static String ship(String a, String b) {
 		String[] syllablesA = getSyllablesFromWord(a).toArray(new String[0]);
