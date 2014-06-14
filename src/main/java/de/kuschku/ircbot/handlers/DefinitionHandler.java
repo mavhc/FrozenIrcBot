@@ -54,22 +54,25 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 	@Override
 	public void onMessage(MessageEvent<PircBotX> event) throws Exception {
 		ImmutableList<String> args = Helper.parseArgs(event.getMessage(), "!");
-		if (args != null && (args.get(0).equalsIgnoreCase("define") || args.get(0).equalsIgnoreCase("urban"))) {
+		if (args != null
+				&& (args.get(0).equalsIgnoreCase("define") || args.get(0)
+						.equalsIgnoreCase("urban"))) {
 			int amount = 3;
 			if (event.getChannel().isChannelPrivate())
 				amount = 20;
 
 			String word = String.join(" ", args.asList());
 			word = word.substring(args.get(0).length() + 1);
-			
+
 			Backend backend = null;
-			
+
 			if (args.get(0).equalsIgnoreCase("define")) {
-				backend = new WordNetBackend(Client.fileConfiguration.get("wordnet_key"));
+				backend = new WordNetBackend(
+						Client.fileConfiguration.get("wordnet_key"));
 			} else if (args.get(0).equalsIgnoreCase("urban")) {
-				backend = new UrbanBackend(Client.fileConfiguration.get("urban_key"));
+				backend = new UrbanBackend(
+						Client.fileConfiguration.get("urban_key"));
 			}
-			
 
 			List<String> list = backend.getDefinition(word, amount);
 
@@ -126,12 +129,13 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 		}
 
 		public String formatDefinition(Definition definition) {
+			String text = definition.getText().substring(0,
+					(definition.getText()+"\n").indexOf("\n"));
 			return String.format(
 					"%s %s %s",
 					new BoldText(String.valueOf((Integer.valueOf(definition
 							.getSequence()) + 1))),
-					new ItalicText(definition.getPartOfSpeech()), definition
-							.getText());
+					new ItalicText(definition.getPartOfSpeech()), text);
 		}
 
 		@Override
@@ -141,7 +145,7 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 							URLParamEncoder.encode(word));
 		}
 	}
-	
+
 	class UrbanBackend implements Backend {
 
 		final String key;
@@ -154,11 +158,20 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 		public List<String> getDefinition(String word, int amount) {
 			word = URLParamEncoder.encode(word);
 			try {
-				JsonObject result = Helper.readJsonFromUrl(String.format("http://api.urbandictionary.com/v0/define?term=%s&key=%s",word,key));
+				JsonObject result = Helper
+						.readJsonFromUrl(String
+								.format("http://api.urbandictionary.com/v0/define?term=%s&key=%s",
+										word, key));
 				JsonArray definitions = result.get("list").getAsJsonArray();
 				List<String> results = new ArrayList<String>();
+				String definition;
 				for (int i = 0; i < amount && i < definitions.size(); i++) {
-					results.add(String.format("%s %s",new BoldText(String.valueOf(i)),definitions.get(i).getAsJsonObject().get("definition").getAsString()));
+					definition = definitions.get(i).getAsJsonObject()
+							.get("definition").getAsString();
+					definition = definition.substring(0,
+							(definition+"\n").indexOf("\n"));
+					results.add(String.format("%s %s",
+							new BoldText(String.valueOf(i)), definition));
 				}
 				return results;
 			} catch (IOException e) {
