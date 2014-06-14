@@ -5,6 +5,6 @@ useAuth:        true
 name:			|debug|
 authName:       botDebug
 authPassword:   
-dictionaryKey:  ce06556de4c517806d4682ce8920ae0f493b12de6ea8d78c5
+dictionaryKey:  
 debug:          false
 handler:        de.kuschku.ircbot.chathandlers.ChatRedditHandler,de.kuschku.ircbot.chathandlers.ControlHandler,de.kuschku.ircbot.chathandlers.ShipHandler,de.kuschku.ircbot.chathandlers.LinkTitleHandler

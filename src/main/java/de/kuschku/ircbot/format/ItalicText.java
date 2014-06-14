@@ -2,20 +2,17 @@ package de.kuschku.ircbot.format;
 
 public class ItalicText extends FormattedSpan {
 
-	char prefix = (char) 0x1D;
-	String text;
-
 	public ItalicText(String text) {
-		this.text = text;
+		super(text);
+	}
+	
+	public ItalicText(FormattedSpan text) {
+		super(text);
 	}
 
-	@Override
-	public String getRawText() {
-		return this.text;
-	}
-
-	@Override
+	protected static final char PREFIX = (char) 0x1D;
+	
 	public String toString() {
-		return prefix + text + prefix;
+		return PREFIX + text + PREFIX;
 	}
 }

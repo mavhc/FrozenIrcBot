@@ -2,20 +2,17 @@ package de.kuschku.ircbot.format;
 
 public class BoldText extends FormattedSpan {
 
-	char prefix = (char) 0x02;
-	String text;
-	
 	public BoldText(String text) {
-		this.text = text;
+		super(text);
+	}
+	
+	public BoldText(FormattedSpan text) {
+		super(text);
 	}
 
-	@Override
-	public String getRawText() {
-		return this.text;
-	}
-
-	@Override
+	protected static final char PREFIX = (char) 0x02;
+	
 	public String toString() {
-		return prefix + text + prefix;
+		return PREFIX + text + PREFIX;
 	}
 }

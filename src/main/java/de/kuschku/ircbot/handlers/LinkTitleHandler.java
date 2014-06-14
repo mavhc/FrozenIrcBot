@@ -23,8 +23,8 @@ import org.pircbotx.hooks.ListenerAdapter;
 import org.pircbotx.hooks.events.MessageEvent;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
+import de.kuschku.ircbot.Helper;
 import de.kuschku.ircbot.format.BoldText;
 
 public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
@@ -55,9 +55,9 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 							.getInstance(Locale.US);
 
 					String message = String.format("%s [%s|%s views]",
-							new BoldText(data.getLeft()),
-							nicetime(data.getMiddle().toString()),
-							formatter.format(data.getRight()));
+							new BoldText(data.getLeft()), nicetime(data
+									.getMiddle().toString()), formatter
+									.format(data.getRight()));
 					event.getChannel().send().message(message);
 				} catch (FileNotFoundException e) {
 
@@ -120,11 +120,11 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 						String input = "";
 
 						for (int i = 0; i < 5; i++) {
-							if ((input = in.readLine())!=null)
+							if ((input = in.readLine()) != null)
 								result += input + "\n";
 						}
 
-						if (result.contains("refresh")) {						
+						if (result.contains("refresh")) {
 							int begin = result.indexOf("URL='");
 							result = result.substring(begin + 5);
 							result = result.substring(0, result.indexOf("'"));
@@ -132,7 +132,6 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 							address = result;
 						}
 					} catch (IOException e) {
-						System.out.println("error happened: " + e.toString());
 					}
 				}
 			}
@@ -144,7 +143,6 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 
 			return result;
 		} catch (Exception e) {
-			System.out.println("error happened: " + e.toString());
 		} finally {
 			if (is != null)
 				try {
@@ -158,28 +156,33 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 
 	private static Triple<String, Integer, Integer> getData(String value,
 			Site site) throws FileNotFoundException {
-		switch (site) {
-		case YOUTUBE:
-			JsonObject data = new JsonParser().parse(
-					getPage("http://gdata.youtube.com/feeds/api/videos/"
-							+ value + "?v=2&alt=jsonc")).getAsJsonObject();
-			return Triple.of(
-					StringEscapeUtils.unescapeHtml4(data.get("data")
-							.getAsJsonObject().get("title").getAsString()),
-					data.get("data").getAsJsonObject().get("duration")
-							.getAsInt(), data.get("data").getAsJsonObject()
-							.get("viewCount").getAsInt());
-		case VIMEO:
-			data = new JsonParser()
-					.parse(getPage("http://vimeo.com/api/v2/video/" + value
-							+ ".json")).getAsJsonArray().get(0)
-					.getAsJsonObject();
-			return Triple.of(StringEscapeUtils.unescapeHtml4(data.get("title")
-					.getAsString()), data.get("duration").getAsInt(),
-					data.get("stats_number_of_plays").getAsInt());
-		default:
-			throw new FileNotFoundException();
+		try {
+			switch (site) {
+			case YOUTUBE:
+				JsonObject data;
+				data = Helper
+						.readJsonFromUrl("http://gdata.youtube.com/feeds/api/videos/"
+								+ value + "?v=2&alt=jsonc");
+				return Triple.of(
+						StringEscapeUtils.unescapeHtml4(data.get("data")
+								.getAsJsonObject().get("title").getAsString()),
+						data.get("data").getAsJsonObject().get("duration")
+								.getAsInt(), data.get("data").getAsJsonObject()
+								.get("viewCount").getAsInt());
+			case VIMEO:
+				data = Helper.readJsonFromUrl("http://vimeo.com/api/v2/video/"
+						+ value + ".json");
+				return Triple.of(StringEscapeUtils.unescapeHtml4(data.get(
+						"title").getAsString()), data.get("duration")
+						.getAsInt(), data.get("stats_number_of_plays")
+						.getAsInt());
+			default:
+				break;
+			}
+		} catch (IOException e) {
 		}
+
+		throw new FileNotFoundException();
 
 	}
 

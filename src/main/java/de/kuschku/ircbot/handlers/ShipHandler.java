@@ -9,7 +9,8 @@ import org.pircbotx.hooks.events.MessageEvent;
 
 import com.google.common.collect.ImmutableList;
 
-import de.kuschku.ircbot.ArgsParser;
+import de.kuschku.ircbot.Helper;
+import de.kuschku.ircbot.format.BoldText;
 
 public class ShipHandler extends ListenerAdapter<PircBotX> {
 	
@@ -135,13 +136,13 @@ public class ShipHandler extends ListenerAdapter<PircBotX> {
 
     @Override
     public void onMessage(MessageEvent<PircBotX> event) throws Exception {
-        ImmutableList<String> args = ArgsParser.parseArgs(event.getMessage(),"!");
+        ImmutableList<String> args = Helper.parseArgs(event.getMessage(),"!");
         if (args!=null && args.get(0).equalsIgnoreCase("ship")) {
             if (args.size()==3) {
             	event.getChannel().send().message(ship(args.get(1), args.get(2)));
             	event.getChannel().send().message(ship(args.get(2), args.get(1)));
             } else {
-            	event.getChannel().send().message("Error: Please use exactly 2 names");
+            	event.getChannel().send().message(new BoldText("Error: Please use exactly 2 names").toString());
             }
         }
     }
