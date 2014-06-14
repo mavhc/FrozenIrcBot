@@ -171,7 +171,7 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 					definition = definition.substring(0,
 							(definition+"\n").indexOf("\n"));
 					results.add(String.format("%s %s",
-							new BoldText(String.valueOf(i)), definition));
+							new BoldText(String.valueOf(i+1)), definition));
 				}
 				return results;
 			} catch (IOException e) {
