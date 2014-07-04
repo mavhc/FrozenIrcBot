@@ -32,11 +32,13 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 	static final String regexGeneric = "<title>(.*)<\\/title>";
 	static final String regexVideo = "<meta (.*)=(\"twitter:app:url:iphone\"|'twitter:app:url:iphone') content=(\"(.*)\"|'(.*)')(>|\\/>)";
 	static final String regexRedirect = "<META http-equiv=\"refresh\" content=\"0;URL=(\"(.*)\"|'(.*)')>";
+	static final String regexURL = "(((http|https|spdy)\\:\\/\\/){1}\\S+)";
 
 	static final Pattern patternOG = Pattern.compile(regexOG);
 	static final Pattern patternGeneric = Pattern.compile(regexGeneric);
 	static final Pattern patternVideo = Pattern.compile(regexVideo);
 	static final Pattern patternRedirect = Pattern.compile(regexRedirect);
+	static final Pattern patternURL = Pattern.compile(regexURL);
 
 	public static enum Site {
 		YOUTUBE, VIMEO, NONE
@@ -189,9 +191,7 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 	public static String[] stringToURLList(String input) {
 		List<String> results = new ArrayList<String>();
 
-		Pattern pattern = Pattern
-				.compile("(((http|https|spdy)\\:\\/\\/){1}\\S+)");
-		Matcher matcher = pattern.matcher(input);
+		Matcher matcher = patternURL.matcher(input);
 		while (matcher.find()) {
 			results.add(matcher.group());
 		}
