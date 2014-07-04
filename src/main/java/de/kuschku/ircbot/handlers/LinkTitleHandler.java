@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.pircbotx.PircBotX;
 import org.pircbotx.hooks.ListenerAdapter;
@@ -28,14 +29,10 @@ import de.kuschku.ircbot.Helper;
 import de.kuschku.ircbot.format.BoldText;
 
 public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
-	static final String regexOG = "<meta (.*)=(\"(og:title|title)\"|'(og:title|title)') content=(\"(.*)\"|'(.*)')(\\/>|>)";
-	static final String regexGeneric = "<title>(.*)<\\/title>";
 	static final String regexVideo = "<meta (.*)=(\"twitter:app:url:iphone\"|'twitter:app:url:iphone') content=(\"(.*)\"|'(.*)')(>|\\/>)";
 	static final String regexRedirect = "<META http-equiv=\"refresh\" content=\"0;URL=(\"(.*)\"|'(.*)')>";
 	static final String regexURL = "(((http|https|spdy)\\:\\/\\/){1}\\S+)";
 
-	static final Pattern patternOG = Pattern.compile(regexOG);
-	static final Pattern patternGeneric = Pattern.compile(regexGeneric);
 	static final Pattern patternVideo = Pattern.compile(regexVideo);
 	static final Pattern patternRedirect = Pattern.compile(regexRedirect);
 	static final Pattern patternURL = Pattern.compile(regexURL);
@@ -48,11 +45,11 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 	public void onMessage(MessageEvent<PircBotX> event) throws Exception {
 		String[] results = stringToURLList(event.getMessage());
 		for (String result : results) {
-			Triple<String, String, Site> value = extractTitleFromWebpage(result);
-			if (value.getMiddle() != null && value.getRight() != Site.NONE) {
+			Pair<String, Site> value = extractTitleFromWebpage(result);
+			if (value.getLeft() != null && value.getRight() != Site.NONE) {
 				try {
 					Triple<String, Integer, Integer> data = getData(
-							value.getMiddle(), value.getRight());
+							value.getLeft(), value.getRight());
 					DecimalFormat formatter = (DecimalFormat) NumberFormat
 							.getInstance(Locale.US);
 
@@ -199,25 +196,12 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 		return results.toArray(new String[0]);
 	}
 
-	public static Triple<String, String, Site> extractTitleFromWebpage(
+	public static Pair<String, Site> extractTitleFromWebpage(
 			String address) {
 		Matcher matcher;
 
 		String page = getPage(address);
-		String title = "";
 		String video_id = null;
-
-		matcher = patternOG.matcher(page);
-		if (matcher.find()) {
-			title = matcher.group(6);
-		}
-
-		if (title == "") {
-			matcher = patternGeneric.matcher(page);
-			if (matcher.find()) {
-				title = matcher.group(1);
-			}
-		}
 
 		matcher = patternVideo.matcher(page);
 
@@ -232,6 +216,6 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 
 		Site site = Site.valueOf(presite.toUpperCase());
 
-		return Triple.of(title, video_id, site);
+		return Pair.of(video_id, site);
 	}
 }
