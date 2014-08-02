@@ -29,7 +29,7 @@ import de.kuschku.ircbot.Helper;
 import de.kuschku.ircbot.format.BoldText;
 
 public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
-	static final String regexVideo = "<meta (.*)=(\"twitter:app:url:iphone\"|'twitter:app:url:iphone') content=(\"(.*)\"|'(.*)')(>|\\/>)";
+	static final String regexVideo = "<meta (.*)=\"twitter:player\" content=(\"(.*)\"|'(.*)')(>|\\/>)";
 	static final String regexRedirect = "<META http-equiv=\"refresh\" content=\"0;URL=(\"(.*)\"|'(.*)')>";
 	static final String regexURL = "(((http|https|spdy)\\:\\/\\/){1}\\S+)";
 
@@ -202,20 +202,48 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 
 		String page = getPage(address);
 		String video_id = null;
+		Site site;
+		String presite = "";
 
 		matcher = patternVideo.matcher(page);
-
-		String presite = "NONE";
 		while (matcher.find()) {
-			video_id = matcher.group(4);
-
-			presite = video_id.substring(0, video_id.indexOf(":/")).replace(
-					"vnd.", "");
+			video_id = matcher.group(3);
+			presite = video_id;
 			video_id = video_id.substring(video_id.lastIndexOf("/") + 1);
 		}
-
-		Site site = Site.valueOf(presite.toUpperCase());
+		if (presite.contains("youtube"))
+			site = Site.YOUTUBE;
+		else
+			site = Site.NONE;
 
 		return Pair.of(video_id, site);
+	}
+	
+	static final void handleDummy(String content) {
+		String[] results = stringToURLList(content);
+		for (String result : results) {
+			Pair<String, Site> value = extractTitleFromWebpage(result);
+			if (value.getLeft() != null && value.getRight() != Site.NONE) {
+				try {
+					Triple<String, Integer, Integer> data = getData(
+							value.getLeft(), value.getRight());
+					DecimalFormat formatter = (DecimalFormat) NumberFormat
+							.getInstance(Locale.US);
+
+					String message = String.format("%s [%s|%s views]",
+							new BoldText(data.getLeft()), nicetime(data
+									.getMiddle().toString()), formatter
+									.format(data.getRight()));
+					System.out.println(message);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	
+	public static void main(String[] argv) {
+		handleDummy("https://www.youtube.com/watch?v=IZtxWn2S0k8");
+		handleDummy("http://vimeo.com/19733014");
 	}
 }
