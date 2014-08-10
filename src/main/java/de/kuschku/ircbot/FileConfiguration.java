@@ -53,8 +53,4 @@ public class FileConfiguration extends HashMap<String, String> {
 			e.printStackTrace();
 		}
 	}
-
-	public String[] getHandlers() {
-		return get("handler").split(",");
-	}
 }

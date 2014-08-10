@@ -40,10 +40,13 @@ public class Client {
 				.setName(fileConfiguration.get("name"))
 				.setLogin(fileConfiguration.get("auth_name"))
 				.setAutoNickChange(false).setCapEnabled(true)
-				.setServerHostname(fileConfiguration.get("hostname"))
-				.addAutoJoinChannel(fileConfiguration.get("channel"));
+				.setServerHostname(fileConfiguration.get("hostname"));
+		
+		for (String channel : fileConfiguration.get("channel").split(",")) {
+			builder.addAutoJoinChannel(channel);
+		}
 
-		for (String handler : fileConfiguration.getHandlers()) {
+		for (String handler : fileConfiguration.get("handler").split(",")) {
 			try {
 				builder.addListener((Listener<PircBotX>) newInstance(handler));
 			} catch (ClassNotFoundException | NoSuchMethodException

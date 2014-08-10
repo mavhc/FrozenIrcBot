@@ -50,13 +50,20 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 		}
 
 	}
+	
+	static final String truncate(String input) {
+		if (input.length()>150)
+			return input.substring(0,150)+"…";
+		else
+			return input;
+	}
 
 	@Override
 	public void onMessage(MessageEvent<PircBotX> event) throws Exception {
 		ImmutableList<String> args = Helper.parseArgs(event.getMessage(), "!");
 		if (args != null
-				&& (args.get(0).equalsIgnoreCase("define") || args.get(0)
-						.equalsIgnoreCase("urban"))) {
+				&& (args.get(0).equalsIgnoreCase("def") || args.get(0)
+						.equalsIgnoreCase("ud"))) {
 			int amount = 3;
 			if (event.getChannel().isChannelPrivate())
 				amount = 20;
@@ -66,10 +73,10 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 
 			Backend backend = null;
 
-			if (args.get(0).equalsIgnoreCase("define")) {
+			if (args.get(0).equalsIgnoreCase("def")) {
 				backend = new WordNetBackend(
 						Client.fileConfiguration.get("wordnet_key"));
-			} else if (args.get(0).equalsIgnoreCase("urban")) {
+			} else if (args.get(0).equalsIgnoreCase("ud")) {
 				backend = new UrbanBackend(
 						Client.fileConfiguration.get("urban_key"));
 			}
@@ -77,7 +84,7 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 			List<String> list = backend.getDefinition(word, amount);
 
 			if (list.size() > 0) {
-				list.forEach(msg -> event.getChannel().send().message(msg));
+				list.forEach(msg -> event.getChannel().send().message(truncate(msg)));
 
 				event.getChannel().send().message(backend.getFooter(word));
 			} else {
