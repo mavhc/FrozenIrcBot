@@ -139,8 +139,7 @@ public class ShipHandler extends ListenerAdapter<PircBotX> {
         ImmutableList<String> args = Helper.parseArgs(event.getMessage(),"!");
         if (args!=null && args.get(0).equalsIgnoreCase("ship")) {
             if (args.size()==3) {
-            	event.getChannel().send().message(ship(args.get(1), args.get(2)));
-            	event.getChannel().send().message(ship(args.get(2), args.get(1)));
+            	event.getChannel().send().message(ship(args.get(1), args.get(2))+" or "+ship(args.get(2), args.get(1)));
             } else {
             	event.getChannel().send().message(new BoldText("Error: Please use exactly 2 names").toString());
             }
