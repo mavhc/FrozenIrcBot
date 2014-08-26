@@ -52,8 +52,8 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 	}
 	
 	static final String truncate(String input) {
-		if (input.length()>150)
-			return input.substring(0,150)+"…";
+		if (input.length()>250)
+			return input.substring(0,250)+"…";
 		else
 			return input;
 	}
