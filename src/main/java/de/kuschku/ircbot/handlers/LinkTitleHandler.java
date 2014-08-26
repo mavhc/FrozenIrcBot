@@ -210,6 +210,8 @@ public class LinkTitleHandler extends ListenerAdapter<PircBotX> {
 			video_id = matcher.group(3);
 			presite = video_id;
 			video_id = video_id.substring(video_id.lastIndexOf("/") + 1);
+			if (video_id.contains("?"))
+                video_id = video_id.substring(0, video_id.indexOf("?"));
 		}
 		if (presite.contains("youtube"))
 			site = Site.YOUTUBE;
