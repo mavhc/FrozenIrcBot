@@ -52,8 +52,10 @@ public class DefinitionHandler extends ListenerAdapter<PircBotX> {
 	}
 	
 	static final String truncate(String input) {
-		if (input.length()>250)
-			return input.substring(0,250)+"…";
+        // IRC max line length is 510, minus 64 for hostname, 20 for username, 20 for nick, 20 for channel and 10 misc,
+        // 510-140 is 370
+		if (input.length()>370)
+			return input.substring(0,370)+"…";
 		else
 			return input;
 	}
